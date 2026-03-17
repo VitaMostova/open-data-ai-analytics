@@ -78,9 +78,10 @@ jobs:
           path: |
             artifacts/${{ matrix.module }}
             reports/figures
-deploy-pages:
+            
+  deploy-pages:
     needs: run-modules
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     permissions:
       contents: write
