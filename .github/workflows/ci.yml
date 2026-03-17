@@ -63,19 +63,25 @@ jobs:
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
         run: |
           mkdir -p artifacts/${{ matrix.module }}
+          mkdir -p reports/figures
           echo "Запуск модуля ${{ matrix.module }}..."
-          
           python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1
+          cp *.png reports/figures/ 2>/dev/null || true
+          cp src/*.png reports/figures/ 2>/dev/null || true
 
       - name: Create HTML report for Pages
-        if: matrix.module == 'visualization'
+        if: matrix.module == 'visualization' && (github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
         run: |
-          echo "<html><body><h1>Visualization Results</h1>" > reports/figures/index.html
+          mkdir -p reports/figures
 
+          echo "<html><body style='font-family:sans-serif;padding:20px;'><h1>Visualization Results</h1>" > reports/figures/index.html
+          echo "<p>BUILD DATE: $(date)</p><hr>" >> reports/figures/index.html
+          echo "<p><a href='run.log'>Переглянути технічний лог (run.log)</a></p>" >> reports/figures/index.html
           for img in reports/figures/*.png; do
-            echo "<img src='$(basename $img)' width='600'><br>" >> reports/figures/index.html
+            if [ -f "$img" ]; then
+              echo "<div><p>$(basename $img)</p><img src='$(basename $img)' width='600'></div>" >> reports/figures/index.html
+            fi
           done
-
           echo "</body></html>" >> reports/figures/index.html
 
       - name: Upload artifacts
@@ -89,7 +95,7 @@ jobs:
           path: |
             artifacts/${{ matrix.module }}
             reports/figures
-            
+
   deploy-pages:
     needs: run-modules
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -104,7 +110,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: artifacts-visualization
-          path: public/
+          path: temp_dir/
+
+      - name: Prepare public folder
+        run: |
+          mkdir -p public
+          find temp_dir/ -type f -exec cp {} public/ \;
+          echo "Ось що буде на сайті:"
+          ls public
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
