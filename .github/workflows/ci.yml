@@ -39,6 +39,7 @@ jobs:
       - name: Set up Python
 
         if: |
+          (github.ref == 'refs/heads/main' && matrix.module == 'visualization') ||
           (github.event_name != 'workflow_dispatch' && steps.changed-files.outputs.any_changed == 'true') ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
         uses: actions/setup-python@v5
@@ -48,6 +49,7 @@ jobs:
 
       - name: Install dependencies
         if: |
+          (github.ref == 'refs/heads/main' && matrix.module == 'visualization') ||
           (github.event_name != 'workflow_dispatch' && steps.changed-files.outputs.any_changed == 'true') ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
         run: |
@@ -56,6 +58,7 @@ jobs:
 
       - name: Run module
         if: |
+          (github.ref == 'refs/heads/main' && matrix.module == 'visualization') ||
           (github.event_name != 'workflow_dispatch' && steps.changed-files.outputs.any_changed == 'true') ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
         run: |
@@ -66,9 +69,33 @@ jobs:
 
       - name: Upload artifacts
         if: |
+          (github.ref == 'refs/heads/main' && matrix.module == 'visualization') ||
           (github.event_name != 'workflow_dispatch' && steps.changed-files.outputs.any_changed == 'true') ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
         uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{ matrix.module }}
-          path: artifacts/${{ matrix.module }}
+          path: |
+            artifacts/${{ matrix.module }}
+            reports/figures
+deploy-pages:
+    needs: run-modules
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download visualization artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-visualization
+          path: public/
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: public/
+          branch: gh-pages
