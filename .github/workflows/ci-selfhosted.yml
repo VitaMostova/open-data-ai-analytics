@@ -1,0 +1,43 @@
+name: CI (self-hosted)
+
+on:
+  workflow_dispatch:
+    inputs:
+      module:
+        description: "Оберіть модуль для запуску"
+        required: true
+        default: visualization
+        type: choice
+        options: [visualization, data_load, data_quality_analysis, data_research]
+
+jobs:
+  run-module-local:
+    runs-on: [self-hosted, Windows, X64, local]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use system Python
+        run: |
+          python --version
+          pip --version
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if exist requirements.txt pip install -r requirements.txt
+
+      - name: Run selected module
+        shell: cmd
+        run: |
+          set MOD=${{ github.event.inputs.module }}
+          if not exist artifacts\%MOD% mkdir artifacts\%MOD%
+          echo Running %MOD% on self-hosted runner...
+          python src\%MOD%.py > artifacts\%MOD%\run.log 2>&1
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ github.event.inputs.module }}-selfhosted
+          path: artifacts/${{ github.event.inputs.module }}
