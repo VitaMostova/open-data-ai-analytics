@@ -67,6 +67,17 @@ jobs:
           
           python src/${{ matrix.module }}.py > artifacts/${{ matrix.module }}/run.log 2>&1
 
+      - name: Create HTML report for Pages
+        if: matrix.module == 'visualization'
+        run: |
+          echo "<html><body><h1>Visualization Results</h1>" > reports/figures/index.html
+
+          for img in reports/figures/*.png; do
+            echo "<img src='$(basename $img)' width='600'><br>" >> reports/figures/index.html
+          done
+
+          echo "</body></html>" >> reports/figures/index.html
+
       - name: Upload artifacts
         if: |
           (github.ref == 'refs/heads/main' && matrix.module == 'visualization') ||
