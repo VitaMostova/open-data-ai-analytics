@@ -72,17 +72,20 @@ jobs:
           github.ref == 'refs/heads/main' ||
           steps.changed-files.outputs.any_changed == 'true' ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
-        run: |
-       
-          echo "<html><body><h1>Results for ${{ matrix.module }}</h1>" > artifacts/${{ matrix.module }}/index.html
-          echo "<p>Build: $(date)</p><a href='run.log'>Technical Log</a><br>" >> artifacts/${{ matrix.module }}/index.html
-     
+        run: |       
+          echo "<html><body style='font-family:sans-serif;padding:20px;'>" > artifacts/${{ matrix.module }}/index.html
+          echo "<h1>Results for ${{ matrix.module }}</h1>" >> artifacts/${{ matrix.module }}/index.html
+          echo "<p>Build Date: $(date)</p><hr>" >> artifacts/${{ matrix.module }}/index.html
+          echo "<h3>Files:</h3><ul>" >> artifacts/${{ matrix.module }}/index.html
+          
+          
           for f in artifacts/${{ matrix.module }}/*; do
             fname=$(basename $f)
             if [ "$fname" != "index.html" ]; then
-              echo "<br><a href='$fname'>$fname</a>" >> artifacts/${{ matrix.module }}/index.html
+              echo "<li><a href='$fname'>$fname</a></li>" >> artifacts/${{ matrix.module }}/index.html
             fi
           done
+          echo "</ul><br><a href='../index.html'>← Back to Main Index</a></body></html>" >> artifacts/${{ matrix.module }}/index.html
           echo "</body></html>" >> artifacts/${{ matrix.module }}/index.html
       - name: Upload artifacts
         if: |
@@ -113,15 +116,27 @@ jobs:
       - name: Prepare public folder
         run: |
           mkdir -p public
-          cp -r temp_dir/*/* public/ 2>/dev/null || true
-          echo "<html><body><h1>Project Reports</h1><ul>" > public/index.html
-          for d in public/*; do
-            if [ -d "$d" ]; then
-              name=$(basename $d)
-              echo "<li><a href='./$name/index.html'>$name</a></li>" >> public/index.html
+          for art_dir in temp_dir/artifacts-*; do
+            if [ -d "$art_dir" ]; then
+              mod_name=$(basename "$art_dir" | sed 's/artifacts-//')
+              mkdir -p "public/$mod_name"
+              cp -r "$art_dir"/* "public/$mod_name/"
             fi
           done
-          echo "</ul></body></html>" >> public/index.html
+
+          
+          echo "<html><body style='font-family:sans-serif;padding:40px;'>" > public/index.html
+          echo "<h1> Project Reports Index</h1><hr><ul>" >> public/index.html
+          
+          for d in public/*; do
+            if [ -d "$d" ]; then
+              name=$(basename "$d")
+              echo "<li style='margin:10px 0;'><a href='./$name/index.html' style='font-size:1.2em; font-weight:bold; text-transform:uppercase;'>$name Report</a></li>" >> public/index.html
+            fi
+          done
+          
+          echo "</ul><footer style='margin-top:50px;color:gray;'>Last Build: $(date)</footer></body></html>" >> public/index.html
+          
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
