@@ -68,25 +68,36 @@ jobs:
           cp -r reports/* artifacts/${{ matrix.module }}/ 2>/dev/null || true
 
       - name: Create HTML report for Pages
+        
         if: |
           github.ref == 'refs/heads/main' ||
           steps.changed-files.outputs.any_changed == 'true' ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.module == 'all' || github.event.inputs.module == matrix.module))
-        run: |       
-          echo "<html><body style='font-family:sans-serif;padding:20px;'>" > artifacts/${{ matrix.module }}/index.html
-          echo "<h1>Results for ${{ matrix.module }}</h1>" >> artifacts/${{ matrix.module }}/index.html
-          echo "<p>Build Date: $(date)</p><hr>" >> artifacts/${{ matrix.module }}/index.html
-          echo "<h3>Files:</h3><ul>" >> artifacts/${{ matrix.module }}/index.html
+        run: |
           
+          REPORT_FILE="artifacts/${{ matrix.module }}/index.html"
+          echo "<html><body style='font-family:sans-serif;padding:20px;'><h1>Results: ${{ matrix.module }}</h1>" > $REPORT_FILE
+          echo "<p>BUILD DATE: $(date)</p><hr>" >> $REPORT_FILE
+
           
-          for f in artifacts/${{ matrix.module }}/*; do
-            fname=$(basename $f)
-            if [ "$fname" != "index.html" ]; then
-              echo "<li><a href='$fname'>$fname</a></li>" >> artifacts/${{ matrix.module }}/index.html
-            fi
-          done
-          echo "</ul><br><a href='../index.html'>← Back to Main Index</a></body></html>" >> artifacts/${{ matrix.module }}/index.html
-          echo "</body></html>" >> artifacts/${{ matrix.module }}/index.html
+          if [ -f "artifacts/${{ matrix.module }}/data_quality_report.md" ]; then
+            echo "<h3> Data Quality Report:</h3>" >> $REPORT_FILE
+            echo "<p><a href='data_quality_report.md' target='_blank'>Відкрити звіт (Markdown)</a></p>" >> $REPORT_FILE
+          fi
+
+          
+          if [ -d "artifacts/${{ matrix.module }}/figures" ]; then
+            echo "<h3>📊 Visualizations:</h3>" >> $REPORT_FILE
+            for img in artifacts/${{ matrix.module }}/figures/*.png; do
+              if [ -f "$img" ]; then
+                fname=$(basename "$img")
+                echo "<div><p>$fname</p><img src='figures/$fname' width='600' style='border:1px solid #ddd; margin-bottom:20px;'></div>" >> $REPORT_FILE
+              fi
+            done
+          fi
+
+          echo "<hr><p><a href='run.log'>Технічний лог (run.log)</a></p>" >> $REPORT_FILE
+          echo "</body></html>" >> $REPORT_FILE
       - name: Upload artifacts
         if: |
           github.ref == 'refs/heads/main' ||
@@ -116,26 +127,25 @@ jobs:
       - name: Prepare public folder
         run: |
           mkdir -p public
-          for art_dir in temp_dir/artifacts-*; do
-            if [ -d "$art_dir" ]; then
-              mod_name=$(basename "$art_dir" | sed 's/artifacts-//')
-              mkdir -p "public/$mod_name"
-              cp -r "$art_dir"/* "public/$mod_name/"
-            fi
-          done
-
           
-          echo "<html><body style='font-family:sans-serif;padding:40px;'>" > public/index.html
-          echo "<h1> Project Reports Index</h1><hr><ul>" >> public/index.html
-          
-          for d in public/*; do
+          for d in temp_dir/artifacts-*; do
             if [ -d "$d" ]; then
-              name=$(basename "$d")
-              echo "<li style='margin:10px 0;'><a href='./$name/index.html' style='font-size:1.2em; font-weight:bold; text-transform:uppercase;'>$name Report</a></li>" >> public/index.html
+              
+              name=$(basename "$d" | sed 's/artifacts-//')
+              mkdir -p "public/$name"
+              cp -r "$d"/* "public/$name/"
             fi
           done
           
-          echo "</ul><footer style='margin-top:50px;color:gray;'>Last Build: $(date)</footer></body></html>" >> public/index.html
+          
+          echo "<html><body><h1>Project Reports</h1><ul>" > public/index.html
+          for folder in public/*; do
+            if [ -d "$folder" ]; then
+              n=$(basename "$folder")
+              echo "<li><a href='./$n/index.html'>$n Report</a></li>" >> public/index.html
+            fi
+          done
+          echo "</ul></body></html>" >> public/index.html
           
 
       - name: Deploy to GitHub Pages
