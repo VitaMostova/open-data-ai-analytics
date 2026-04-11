@@ -3,11 +3,11 @@ from pathlib import Path
 import sqlite3
 
 def analyze_drrro_quality():
-    # Шляхи всередині Docker-середовища
+
     DB_PATH = Path("/app/data/database.sqlite")
     REPORT_PATH = Path("/app/reports/data_quality_report.md")
 
-    # Створюємо папку для звітів, якщо її немає
+
     REPORT_PATH.parent.mkdir(exist_ok=True, parents=True)
 
     if not DB_PATH.exists():
@@ -16,9 +16,9 @@ def analyze_drrro_quality():
 
     print(f"Читання даних з бази: {DB_PATH}")
 
-    # --- КРОК 1: ПІДКЛЮЧЕННЯ ДО БД ---
+
     conn = sqlite3.connect(DB_PATH)
-    # Читаємо таблицю rro_data, яку створив data_load
+
     try:
         df = pd.read_sql_query("SELECT * FROM rro_data", conn)
     except Exception as e:
