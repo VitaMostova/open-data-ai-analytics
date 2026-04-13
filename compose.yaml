@@ -1,0 +1,42 @@
+services:
+  data_load:
+    build: ./data_load
+    volumes:
+      - ./data:/app/data
+
+  quality:
+    build: ./data_quality_analysis
+    depends_on:
+      data_load:
+        condition: service_completed_successfully
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+
+  research:
+    build: ./data_research
+    depends_on:
+      data_load:
+        condition: service_completed_successfully
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+
+  visualization:
+    build: ./visualization
+    depends_on:
+      data_load:
+        condition: service_completed_successfully
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+
+  web:
+    build: ./web
+    ports:
+      - "5000:5000"
+    depends_on:
+      visualization:
+        condition: service_started
+    volumes:
+      - ./reports:/app/reports
