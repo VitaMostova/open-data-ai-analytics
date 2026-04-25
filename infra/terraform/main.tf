@@ -1,10 +1,11 @@
 provider "azurerm" {
   features {}
+  resource_provider_registrations = "none"
 }
 
 resource "azurerm_resource_group" "rg" {
-  name     = "rg-lab4-vita"
-  location = "West Europe"
+  name     = "rg-lab4-vita-v3"
+  location = "centralus"
 }
 
 resource "azurerm_virtual_network" "vnet" {
@@ -19,6 +20,9 @@ resource "azurerm_subnet" "subnet" {
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.0.1.0/24"]
+  depends_on = [
+    azurerm_virtual_network.vnet
+  ]
 }
 
 resource "azurerm_public_ip" "pip" {
@@ -59,9 +63,11 @@ resource "azurerm_network_security_group" "nsg" {
 }
 
 resource "azurerm_network_interface" "nic" {
+
   name                = "nic-lab"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+  depends_on = [azurerm_subnet.subnet]
 
   ip_configuration {
     name                          = "internal"
@@ -80,7 +86,7 @@ resource "azurerm_linux_virtual_machine" "vm" {
   name                = "vm-lab-vita"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
-  size                = "Standard_B1s"
+  size                = "Standard_D2s_v3"
   admin_username      = "azureuser"
 
   network_interface_ids = [azurerm_network_interface.nic.id]
