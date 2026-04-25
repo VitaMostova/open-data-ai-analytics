@@ -1,0 +1,17 @@
+#cloud-config
+package_update: true
+
+packages:
+  - docker.io
+  - git
+  - docker-compose
+
+runcmd:
+  - systemctl start docker
+  - systemctl enable docker
+  # Клонуємо репозиторій у папку /app
+  - git clone https://github.com/VitaMostova/open-data-ai-analytics.git /app
+  # Переходимо в корінь, де лежить compose.yaml
+  - cd /app
+  # Запускаємо проект (флаг -f вкаже на файл, якщо він називається саме compose.yaml)
+  - docker-compose -f compose.yaml up -d
