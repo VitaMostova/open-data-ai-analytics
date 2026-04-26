@@ -60,6 +60,31 @@ resource "azurerm_network_security_group" "nsg" {
     source_address_prefix      = "*"
     destination_address_prefix = "*"
   }
+  # Правило для Grafana
+  security_rule {
+    name                       = "Grafana"
+    priority                   = 1003
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "3000" # Порт Grafana
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  # Правило для Prometheus (якщо захочеш зайти в його інтерфейс)
+  security_rule {
+    name                       = "Prometheus"
+    priority                   = 1004
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "9090" # Порт Prometheus
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
 }
 
 resource "azurerm_network_interface" "nic" {

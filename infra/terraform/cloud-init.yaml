@@ -14,4 +14,4 @@ runcmd:
   # Переходимо в корінь, де лежить compose.yaml
   - cd /app
   # Запускаємо проект (флаг -f вкаже на файл, якщо він називається саме compose.yaml)
-  - docker-compose -f compose.yaml up -d
+  - docker-compose -f compose.yaml up -d -f monitoring/docker-compose.monitoring.yml up -d
