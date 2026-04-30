@@ -25,7 +25,7 @@ spec:
                   def do_GET(self):
                       self.send_response(200)
                       self.end_headers()
-                      self.wfile.write(b'GitOps WORKS v2')
+                      self.wfile.write(b'GitOps WORKS v1')
               socketserver.TCPServer(('',5000),H).serve_forever()
           ports:
             - containerPort: 5000
