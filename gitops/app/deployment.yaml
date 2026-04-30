@@ -15,9 +15,17 @@ spec:
     spec:
       containers:
         - name: web
-          image: vitamostova/open-data-web:latest
+          image: python:3.11-slim
+          command:
+            - python
+            - "-c"
+            - |
+              import http.server, socketserver
+              class H(http.server.SimpleHTTPRequestHandler):
+                  def do_GET(self):
+                      self.send_response(200)
+                      self.end_headers()
+                      self.wfile.write(b'GitOps WORKS v1')
+              socketserver.TCPServer(('',5000),H).serve_forever()
           ports:
             - containerPort: 5000
-          env:
-            - name: APP_VERSION
-              value: "v1.0"
