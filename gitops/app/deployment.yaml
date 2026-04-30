@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-analytics
+  namespace: vitas-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: web-analytics
+  template:
+    metadata:
+      labels:
+        app: web-analytics
+    spec:
+      containers:
+        - name: web
+          image: vitamostova/open-data-web:latest
+          ports:
+            - containerPort: 5000
+          env:
+            - name: APP_VERSION
+              value: "v1.0"
